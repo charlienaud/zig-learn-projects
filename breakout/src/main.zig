@@ -44,10 +44,11 @@ const paddle_y_pos: f32 = WINDOW_HEIGHT - PADDLE_HEIGHT - 25;
 const Brick = struct {
     x: f32,
     y: f32,
+    life: u32 = 1,
 };
 
 // Generate the bricks pool at compile time
-const bricks: [BRICKS_TOTAL]Brick = bricks_pool: {
+var bricks: [BRICKS_TOTAL]Brick = bricks_pool: {
     var tmp_bricks: [BRICKS_TOTAL]Brick = undefined;
     var i = 0;
     for (0..BRICK_ROWS) |row| {
@@ -173,6 +174,24 @@ fn update(delta: f32) void {
 
     // End paddle collision
 
+    // Bricks collision
+    for (&bricks) |*brick| {
+        if (brick.life == 0) {
+            continue;
+        }
+        const brick_rect: c.SDL_Rect = .{
+            .x = @intFromFloat(brick.x),
+            .y = @intFromFloat(brick.y),
+            .w = BRICK_WIDTH,
+            .h = BRICK_HEIGHT,
+        };
+
+        if (c.SDL_HasIntersection(&ballRect(), &brick_rect) != 0) {
+            brick.*.life -= 1;
+        }
+    }
+    // End bricks collision
+
     ball_x_pos = nextX;
     ball_y_pos = nextY;
 }
@@ -181,7 +200,9 @@ fn render(renderer: *c.SDL_Renderer) void {
     // Draw the bricks
     _ = c.SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
     for (bricks) |brick| {
-        std.debug.print("BRICK: x: {d}, y: {d}\n", .{ brick.x, brick.y });
+        if (brick.life == 0) {
+            continue;
+        }
         const brick_rect: c.SDL_Rect = .{
             .x = @intFromFloat(brick.x),
             .y = @intFromFloat(brick.y),
