@@ -20,6 +20,15 @@ const PADDLE_SPEED: f32 = 600; // pixel per second
 const PADDLE_WIDTH = 100;
 const PADDLE_HEIGHT = 15;
 
+const BRICK_ROWS = 5;
+const BRICK_COLS = 10;
+const BRICKS_TOTAL = BRICK_ROWS * BRICK_COLS;
+const BRICK_WIDTH: f32 = 60;
+const BRICK_HEIGHT: f32 = 15;
+const BRICK_GAP: f32 = 5;
+const BRICK_X_OFFSET: f32 = (WINDOW_WIDTH - BRICK_COLS * (BRICK_WIDTH + BRICK_GAP) - BRICK_GAP) / 2;
+const BRICK_Y_OFFSET: f32 = 25;
+
 // State
 var run = true;
 var pause = false;
@@ -31,6 +40,27 @@ var ball_d_y: f32 = 1;
 
 var paddle_x_pos: f32 = WINDOW_WIDTH / 2 + PADDLE_WIDTH / 2;
 const paddle_y_pos: f32 = WINDOW_HEIGHT - PADDLE_HEIGHT - 25;
+
+const Brick = struct {
+    x: f32,
+    y: f32,
+};
+
+// Generate the bricks pool at compile time
+const bricks: [BRICKS_TOTAL]Brick = bricks_pool: {
+    var tmp_bricks: [BRICKS_TOTAL]Brick = undefined;
+    for (0..BRICKS_TOTAL) |i| {
+        const row = i / BRICK_COLS;
+        const col = i % BRICK_COLS;
+
+        tmp_bricks[i] = .{
+            .x = BRICK_X_OFFSET + @as(f32, @floatFromInt(col)) * (BRICK_WIDTH + BRICK_GAP),
+            .y = BRICK_Y_OFFSET + @as(f32, @floatFromInt(row)) * (BRICK_HEIGHT + BRICK_GAP),
+        };
+    }
+
+    break :bricks_pool tmp_bricks;
+};
 
 pub fn main() !void {
     // @see https://wiki.libsdl.org/SDL2/SDL_Init
@@ -146,6 +176,19 @@ fn update(delta: f32) void {
 }
 
 fn render(renderer: *c.SDL_Renderer) void {
+    // Draw the bricks
+    _ = c.SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+    for (bricks) |brick| {
+        std.debug.print("BRICK: x: {d}, y: {d}\n", .{ brick.x, brick.y });
+        const brick_rect: c.SDL_Rect = .{
+            .x = @intFromFloat(brick.x),
+            .y = @intFromFloat(brick.y),
+            .w = BRICK_WIDTH,
+            .h = BRICK_HEIGHT,
+        };
+
+        _ = c.SDL_RenderFillRect(renderer, &brick_rect);
+    }
 
     // Draw the ball
     _ = c.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
