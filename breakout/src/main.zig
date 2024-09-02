@@ -13,24 +13,24 @@ const DELTA_TIME_SEC: f32 = 1.0 / @as(f32, @floatFromInt(FPS));
 
 // Ball
 const BALL_SPEED: f32 = 200; // pixel per second
-const BALL_SIZE = 20;
+const BALL_SIZE = 15;
 
 // Paddle
 const PADDLE_SPEED: f32 = 600; // pixel per second
-const PADDLE_WIDTH = 200;
-const PADDLE_HEIGHT = 20;
+const PADDLE_WIDTH = 100;
+const PADDLE_HEIGHT = 15;
 
 // State
 var run = true;
 var pause = false;
 
-var ballXPos: f32 = 0;
-var ballYPos: f32 = 0;
-var ballDx: f32 = 1;
-var ballDy: f32 = 1;
+var ball_x_pos: f32 = 0;
+var ball_y_pos: f32 = 0;
+var ball_d_x: f32 = 1;
+var ball_d_y: f32 = 1;
 
-var paddleXPos: f32 = WINDOW_WIDTH / 2 + PADDLE_WIDTH / 2;
-const paddleYPos: f32 = WINDOW_HEIGHT - PADDLE_HEIGHT;
+var paddle_x_pos: f32 = WINDOW_WIDTH / 2 + PADDLE_WIDTH / 2;
+const paddle_y_pos: f32 = WINDOW_HEIGHT - PADDLE_HEIGHT - 25;
 
 pub fn main() !void {
     // @see https://wiki.libsdl.org/SDL2/SDL_Init
@@ -76,22 +76,22 @@ pub fn main() !void {
         const keyboard = c.SDL_GetKeyboardState(null);
 
         // PADDLE MOVEMENT
-        const isLeftPressed: bool = (keyboard[c.SDL_SCANCODE_LEFT] != 0);
-        const isRightPressed: bool = (keyboard[c.SDL_SCANCODE_RIGHT] != 0);
+        const is_left_pressed: bool = (keyboard[c.SDL_SCANCODE_LEFT] != 0);
+        const is_right_pressed: bool = (keyboard[c.SDL_SCANCODE_RIGHT] != 0);
 
-        if (isLeftPressed) {
-            paddleXPos -= PADDLE_SPEED * DELTA_TIME_SEC;
+        if (is_left_pressed) {
+            paddle_x_pos -= PADDLE_SPEED * DELTA_TIME_SEC;
 
-            if (paddleXPos < 0) {
-                paddleXPos = 0;
+            if (paddle_x_pos < 0) {
+                paddle_x_pos = 0;
             }
         }
 
-        if (isRightPressed) {
-            paddleXPos += PADDLE_SPEED * DELTA_TIME_SEC;
+        if (is_right_pressed) {
+            paddle_x_pos += PADDLE_SPEED * DELTA_TIME_SEC;
 
-            if (paddleXPos > WINDOW_WIDTH - PADDLE_WIDTH) {
-                paddleXPos = WINDOW_WIDTH - PADDLE_WIDTH;
+            if (paddle_x_pos > WINDOW_WIDTH - PADDLE_WIDTH) {
+                paddle_x_pos = WINDOW_WIDTH - PADDLE_WIDTH;
             }
         }
         // END PADDLE MOVEMENT
@@ -114,45 +114,55 @@ fn update(delta: f32) void {
     }
 
     // Make the ball bounce on window limit
-    var nextX = ballXPos + ballDx * BALL_SPEED * delta;
-    var nextY = ballYPos + ballDy * BALL_SPEED * delta;
+    var nextX = ball_x_pos + ball_d_x * BALL_SPEED * delta;
+    var nextY = ball_y_pos + ball_d_y * BALL_SPEED * delta;
 
     if (nextX < 0 or nextX + BALL_SIZE > WINDOW_WIDTH) {
-        ballDx *= -1;
+        ball_d_x *= -1;
         // direction change, recompute
-        nextX = ballXPos + ballDx * BALL_SPEED * delta;
+        nextX = ball_x_pos + ball_d_x * BALL_SPEED * delta;
     }
 
     if (nextY < 0 or nextY + BALL_SIZE > WINDOW_HEIGHT) {
-        ballDy *= -1;
+        ball_d_y *= -1;
         // direction change, recompute
-        nextY = ballYPos + ballDy * BALL_SPEED * delta;
+        nextY = ball_y_pos + ball_d_y * BALL_SPEED * delta;
     }
     // End ball bounce
 
-    ballXPos = nextX;
-    ballYPos = nextY;
+    ball_x_pos = nextX;
+    ball_y_pos = nextY;
 }
 
 fn render(renderer: *c.SDL_Renderer) void {
-    const ball: c.SDL_Rect = .{
-        .x = @intFromFloat(ballXPos),
-        .y = @intFromFloat(ballYPos),
+
+    // Draw the ball
+    _ = c.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    _ = c.SDL_RenderFillRect(renderer, &ballRect());
+
+    // Draw the paddle
+    _ = c.SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+    _ = c.SDL_RenderFillRect(renderer, &paddleRect());
+}
+
+fn ballRect() c.SDL_Rect {
+    const ball_rect: c.SDL_Rect = .{
+        .x = @intFromFloat(ball_x_pos),
+        .y = @intFromFloat(ball_y_pos),
         .w = BALL_SIZE,
         .h = BALL_SIZE,
     };
-    const paddle: c.SDL_Rect = .{
-        .x = @intFromFloat(paddleXPos),
-        .y = @intFromFloat(paddleYPos),
+
+    return ball_rect;
+}
+
+fn paddleRect() c.SDL_Rect {
+    const paddle_rect: c.SDL_Rect = .{
+        .x = @intFromFloat(paddle_x_pos),
+        .y = @intFromFloat(paddle_y_pos),
         .w = PADDLE_WIDTH,
         .h = PADDLE_HEIGHT,
     };
 
-    // Draw the ball
-    _ = c.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    _ = c.SDL_RenderFillRect(renderer, &ball);
-
-    // Draw the paddle
-    _ = c.SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    _ = c.SDL_RenderFillRect(renderer, &paddle);
+    return paddle_rect;
 }
