@@ -49,14 +49,16 @@ const Brick = struct {
 // Generate the bricks pool at compile time
 const bricks: [BRICKS_TOTAL]Brick = bricks_pool: {
     var tmp_bricks: [BRICKS_TOTAL]Brick = undefined;
-    for (0..BRICKS_TOTAL) |i| {
-        const row = i / BRICK_COLS;
-        const col = i % BRICK_COLS;
+    var i = 0;
+    for (0..BRICK_ROWS) |row| {
+        for (0..BRICK_COLS) |col| {
+            tmp_bricks[i] = .{
+                .x = BRICK_X_OFFSET + @as(f32, @floatFromInt(col)) * (BRICK_WIDTH + BRICK_GAP),
+                .y = BRICK_Y_OFFSET + @as(f32, @floatFromInt(row)) * (BRICK_HEIGHT + BRICK_GAP),
+            };
 
-        tmp_bricks[i] = .{
-            .x = BRICK_X_OFFSET + @as(f32, @floatFromInt(col)) * (BRICK_WIDTH + BRICK_GAP),
-            .y = BRICK_Y_OFFSET + @as(f32, @floatFromInt(row)) * (BRICK_HEIGHT + BRICK_GAP),
-        };
+            i += 1;
+        }
     }
 
     break :bricks_pool tmp_bricks;
