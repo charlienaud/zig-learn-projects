@@ -29,9 +29,9 @@ zig build run
 
 - [x] Render ball
 - [x] Render paddle
-- [ ] Render bricks
+- [x] Render bricks
 - [x] Ball collide with window
-- [ ] Ball collide with paddle
+- [x] Ball collide with paddle
 - [ ] Ball collide with bricks
 - [x] Paddle can move
 - [x] Paddle collide with window

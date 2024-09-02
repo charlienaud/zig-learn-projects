@@ -179,14 +179,8 @@ fn update(delta: f32) void {
         if (brick.life == 0) {
             continue;
         }
-        const brick_rect: c.SDL_Rect = .{
-            .x = @intFromFloat(brick.x),
-            .y = @intFromFloat(brick.y),
-            .w = BRICK_WIDTH,
-            .h = BRICK_HEIGHT,
-        };
 
-        if (c.SDL_HasIntersection(&ballRect(), &brick_rect) != 0) {
+        if (c.SDL_HasIntersection(&ballRect(), &brickRect(brick.x, brick.y, BRICK_WIDTH, BRICK_HEIGHT)) != 0) {
             brick.*.life -= 1;
         }
     }
@@ -203,14 +197,8 @@ fn render(renderer: *c.SDL_Renderer) void {
         if (brick.life == 0) {
             continue;
         }
-        const brick_rect: c.SDL_Rect = .{
-            .x = @intFromFloat(brick.x),
-            .y = @intFromFloat(brick.y),
-            .w = BRICK_WIDTH,
-            .h = BRICK_HEIGHT,
-        };
 
-        _ = c.SDL_RenderFillRect(renderer, &brick_rect);
+        _ = c.SDL_RenderFillRect(renderer, &brickRect(brick.x, brick.y, BRICK_WIDTH, BRICK_HEIGHT));
     }
 
     // Draw the ball
@@ -223,23 +211,22 @@ fn render(renderer: *c.SDL_Renderer) void {
 }
 
 fn ballRect() c.SDL_Rect {
-    const ball_rect: c.SDL_Rect = .{
-        .x = @intFromFloat(ball_x_pos),
-        .y = @intFromFloat(ball_y_pos),
-        .w = BALL_SIZE,
-        .h = BALL_SIZE,
-    };
-
-    return ball_rect;
+    return makeRect(ball_x_pos, ball_y_pos, BALL_SIZE, BALL_SIZE);
 }
 
 fn paddleRect() c.SDL_Rect {
-    const paddle_rect: c.SDL_Rect = .{
-        .x = @intFromFloat(paddle_x_pos),
-        .y = @intFromFloat(paddle_y_pos),
-        .w = PADDLE_WIDTH,
-        .h = PADDLE_HEIGHT,
-    };
+    return makeRect(paddle_x_pos, paddle_y_pos, PADDLE_WIDTH, PADDLE_HEIGHT);
+}
 
-    return paddle_rect;
+fn brickRect(x: f32, y: f32, w: f32, h: f32) c.SDL_Rect {
+    return makeRect(x, y, w, h);
+}
+
+fn makeRect(x: f32, y: f32, w: f32, h: f32) c.SDL_Rect {
+    return c.SDL_Rect{
+        .x = @intFromFloat(x),
+        .y = @intFromFloat(y),
+        .w = @intFromFloat(w),
+        .h = @intFromFloat(h),
+    };
 }
