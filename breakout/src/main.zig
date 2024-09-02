@@ -130,6 +130,17 @@ fn update(delta: f32) void {
     }
     // End ball bounce
 
+    // Collision with paddle
+    if (c.SDL_HasIntersection(&ballRect(), &paddleRect()) != 0) {
+        ball_d_y *= -1;
+        // direction change, recompute
+        nextY = ball_y_pos + ball_d_y * BALL_SPEED * delta;
+    }
+    // If the ball collision from the side of the paddle, the physics is kinda weird
+    // Should not be an issue when we're going to setup ball lost if below the paddle
+
+    // End paddle collision
+
     ball_x_pos = nextX;
     ball_y_pos = nextY;
 }
