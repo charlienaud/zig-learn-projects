@@ -32,10 +32,9 @@ zig build run
 - [x] Render bricks
 - [x] Ball collide with window
 - [x] Ball collide with paddle
-- [ ] Ball collide with bricks
+- [x] Ball collide with bricks
 - [x] Paddle can move
 - [x] Paddle collide with window
-- [ ] Manually launch the ball
 - [ ] Show time
 - [ ] Show score
 - [ ] Show remaining balls

@@ -33,13 +33,13 @@ const BRICK_Y_OFFSET: f32 = 25;
 var run = true;
 var pause = false;
 
-var ball_x_pos: f32 = 0;
-var ball_y_pos: f32 = 0;
-var ball_d_x: f32 = 1;
-var ball_d_y: f32 = 1;
-
 var paddle_x_pos: f32 = WINDOW_WIDTH / 2 + PADDLE_WIDTH / 2;
 const paddle_y_pos: f32 = WINDOW_HEIGHT - PADDLE_HEIGHT - 25;
+
+var ball_x_pos: f32 = (WINDOW_WIDTH / 2 + PADDLE_WIDTH / 2) + PADDLE_WIDTH / 2 - BALL_SIZE / 2;
+var ball_y_pos: f32 = (WINDOW_HEIGHT - PADDLE_HEIGHT - 25) - 50;
+var ball_d_x: f32 = 1;
+var ball_d_y: f32 = -1;
 
 const Brick = struct {
     x: f32,
@@ -64,6 +64,52 @@ var bricks: [BRICKS_TOTAL]Brick = bricks_pool: {
 
     break :bricks_pool tmp_bricks;
 };
+
+fn ballCollision(delta: f32) void {
+    const nextX = ball_x_pos + ball_d_x * BALL_SPEED * delta;
+    const nextY = ball_y_pos + ball_d_y * BALL_SPEED * delta;
+
+    // Paddle collision
+    if (c.SDL_HasIntersection(&ballRect(nextX, nextY), &paddleRect(paddle_x_pos, paddle_y_pos)) != 0) {
+        ball_d_y *= -1;
+
+        if (nextX < paddle_x_pos or nextX > paddle_x_pos + PADDLE_WIDTH) {
+            ball_d_x *= -1;
+        }
+
+        return;
+    }
+
+    // Window Collision
+    if (nextX < 0 or nextX + BALL_SIZE > WINDOW_WIDTH) {
+        ball_d_x *= -1;
+
+        return;
+    }
+
+    // Window Collision
+    if (nextY < 0 or nextY + BALL_SIZE > WINDOW_HEIGHT) {
+        ball_d_y *= -1;
+
+        return;
+    }
+
+    // Bricks collision
+    for (&bricks) |*brick| {
+        if (brick.life == 0) {
+            continue;
+        }
+
+        if (c.SDL_HasIntersection(&ballRect(ball_x_pos, ball_y_pos), &brickRect(brick.x, brick.y, BRICK_WIDTH, BRICK_HEIGHT)) != 0) {
+            brick.*.life -= 1;
+            ball_d_y *= -1;
+        }
+    }
+    // End bricks collision
+
+    ball_x_pos = nextX;
+    ball_y_pos = nextY;
+}
 
 pub fn main() !void {
     // @see https://wiki.libsdl.org/SDL2/SDL_Init
@@ -146,48 +192,7 @@ fn update(delta: f32) void {
         return;
     }
 
-    // Make the ball bounce on window limit
-    var nextX = ball_x_pos + ball_d_x * BALL_SPEED * delta;
-    var nextY = ball_y_pos + ball_d_y * BALL_SPEED * delta;
-
-    if (nextX < 0 or nextX + BALL_SIZE > WINDOW_WIDTH) {
-        ball_d_x *= -1;
-        // direction change, recompute
-        nextX = ball_x_pos + ball_d_x * BALL_SPEED * delta;
-    }
-
-    if (nextY < 0 or nextY + BALL_SIZE > WINDOW_HEIGHT) {
-        ball_d_y *= -1;
-        // direction change, recompute
-        nextY = ball_y_pos + ball_d_y * BALL_SPEED * delta;
-    }
-    // End ball bounce
-
-    // Collision with paddle
-    if (c.SDL_HasIntersection(&ballRect(), &paddleRect()) != 0) {
-        ball_d_y *= -1;
-        // direction change, recompute
-        nextY = ball_y_pos + ball_d_y * BALL_SPEED * delta;
-    }
-    // If the ball collision from the side of the paddle, the physics is kinda weird
-    // Should not be an issue when we're going to setup ball lost if below the paddle
-
-    // End paddle collision
-
-    // Bricks collision
-    for (&bricks) |*brick| {
-        if (brick.life == 0) {
-            continue;
-        }
-
-        if (c.SDL_HasIntersection(&ballRect(), &brickRect(brick.x, brick.y, BRICK_WIDTH, BRICK_HEIGHT)) != 0) {
-            brick.*.life -= 1;
-        }
-    }
-    // End bricks collision
-
-    ball_x_pos = nextX;
-    ball_y_pos = nextY;
+    ballCollision(delta);
 }
 
 fn render(renderer: *c.SDL_Renderer) void {
@@ -203,19 +208,19 @@ fn render(renderer: *c.SDL_Renderer) void {
 
     // Draw the ball
     _ = c.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    _ = c.SDL_RenderFillRect(renderer, &ballRect());
+    _ = c.SDL_RenderFillRect(renderer, &ballRect(ball_x_pos, ball_y_pos));
 
     // Draw the paddle
     _ = c.SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
-    _ = c.SDL_RenderFillRect(renderer, &paddleRect());
+    _ = c.SDL_RenderFillRect(renderer, &paddleRect(paddle_x_pos, paddle_y_pos));
 }
 
-fn ballRect() c.SDL_Rect {
-    return makeRect(ball_x_pos, ball_y_pos, BALL_SIZE, BALL_SIZE);
+fn ballRect(x: f32, y: f32) c.SDL_Rect {
+    return makeRect(x, y, BALL_SIZE, BALL_SIZE);
 }
 
-fn paddleRect() c.SDL_Rect {
-    return makeRect(paddle_x_pos, paddle_y_pos, PADDLE_WIDTH, PADDLE_HEIGHT);
+fn paddleRect(x: f32, y: f32) c.SDL_Rect {
+    return makeRect(x, y, PADDLE_WIDTH, PADDLE_HEIGHT);
 }
 
 fn brickRect(x: f32, y: f32, w: f32, h: f32) c.SDL_Rect {
