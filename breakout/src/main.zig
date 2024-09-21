@@ -3,13 +3,20 @@ const c = @cImport({
     @cInclude("SDL2/SDL.h");
 });
 
-// Game
+// Window
 const WINDOW_DEFAULT_X = 0;
 const WINDOW_DEFAULT_Y = 0;
 const WINDOW_WIDTH = 800;
 const WINDOW_HEIGHT = 600;
 const FPS = 60;
 const DELTA_TIME_SEC: f32 = 1.0 / @as(f32, @floatFromInt(FPS));
+
+// Game area
+const GAME_WIDTH = 740;
+const GAME_HEIGHT = 450;
+const GAME_DEFAULT_X = (WINDOW_WIDTH - GAME_WIDTH) / 2;
+const GAME_DEFAULT_Y = (WINDOW_HEIGHT - GAME_HEIGHT);
+const WALL_SIZE = GAME_DEFAULT_X;
 
 // Ball
 const BALL_SPEED: f32 = 200; // pixel per second
@@ -26,17 +33,17 @@ const BRICKS_TOTAL = BRICK_ROWS * BRICK_COLS;
 const BRICK_WIDTH: f32 = 60;
 const BRICK_HEIGHT: f32 = 15;
 const BRICK_GAP: f32 = 5;
-const BRICK_X_OFFSET: f32 = (WINDOW_WIDTH - BRICK_COLS * (BRICK_WIDTH + BRICK_GAP) - BRICK_GAP) / 2;
-const BRICK_Y_OFFSET: f32 = 25;
+const BRICK_X_OFFSET: f32 = GAME_DEFAULT_X + (GAME_WIDTH - BRICK_COLS * (BRICK_WIDTH + BRICK_GAP) - BRICK_GAP) / 2;
+const BRICK_Y_OFFSET: f32 = GAME_DEFAULT_Y + 25;
 
 // State
 var run = true;
 var pause = false;
 
-var paddle_x_pos: f32 = WINDOW_WIDTH / 2 + PADDLE_WIDTH / 2;
-const paddle_y_pos: f32 = WINDOW_HEIGHT - PADDLE_HEIGHT - 25;
+var paddle_x_pos: f32 = GAME_DEFAULT_X + GAME_WIDTH / 2 + PADDLE_WIDTH / 2;
+const paddle_y_pos: f32 = WINDOW_HEIGHT - PADDLE_HEIGHT - 15;
 
-var ball_x_pos: f32 = (WINDOW_WIDTH / 2 + PADDLE_WIDTH / 2) + PADDLE_WIDTH / 2 - BALL_SIZE / 2;
+var ball_x_pos: f32 = GAME_DEFAULT_X + (GAME_WIDTH / 2 + PADDLE_WIDTH / 2) + PADDLE_WIDTH / 2 - BALL_SIZE / 2;
 var ball_y_pos: f32 = (WINDOW_HEIGHT - PADDLE_HEIGHT - 25) - 50;
 var ball_d_x: f32 = 1;
 var ball_d_y: f32 = -1;
@@ -81,14 +88,14 @@ fn ballCollision(delta: f32) void {
     }
 
     // Window Collision
-    if (nextX < 0 or nextX + BALL_SIZE > WINDOW_WIDTH) {
+    if (nextX < GAME_DEFAULT_X or nextX + BALL_SIZE > (GAME_WIDTH + GAME_DEFAULT_X)) {
         ball_d_x *= -1;
 
         return;
     }
 
     // Window Collision
-    if (nextY < 0 or nextY + BALL_SIZE > WINDOW_HEIGHT) {
+    if (nextY < GAME_DEFAULT_Y or nextY + BALL_SIZE > WINDOW_HEIGHT) {
         ball_d_y *= -1;
 
         return;
@@ -161,16 +168,16 @@ pub fn main() !void {
         if (is_left_pressed) {
             paddle_x_pos -= PADDLE_SPEED * DELTA_TIME_SEC;
 
-            if (paddle_x_pos < 0) {
-                paddle_x_pos = 0;
+            if (paddle_x_pos < GAME_DEFAULT_X) {
+                paddle_x_pos = GAME_DEFAULT_X;
             }
         }
 
         if (is_right_pressed) {
             paddle_x_pos += PADDLE_SPEED * DELTA_TIME_SEC;
 
-            if (paddle_x_pos > WINDOW_WIDTH - PADDLE_WIDTH) {
-                paddle_x_pos = WINDOW_WIDTH - PADDLE_WIDTH;
+            if (paddle_x_pos > GAME_DEFAULT_X + GAME_WIDTH - PADDLE_WIDTH) {
+                paddle_x_pos = GAME_DEFAULT_X + GAME_WIDTH - PADDLE_WIDTH;
             }
         }
         // END PADDLE MOVEMENT
@@ -206,6 +213,12 @@ fn render(renderer: *c.SDL_Renderer) void {
         _ = c.SDL_RenderFillRect(renderer, &brickRect(brick.x, brick.y, BRICK_WIDTH, BRICK_HEIGHT));
     }
 
+    // Draw the walls
+    _ = c.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+    _ = c.SDL_RenderFillRect(renderer, &leftWall());
+    _ = c.SDL_RenderFillRect(renderer, &rightWall());
+    _ = c.SDL_RenderFillRect(renderer, &topWall());
+
     // Draw the ball
     _ = c.SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
     _ = c.SDL_RenderFillRect(renderer, &ballRect(ball_x_pos, ball_y_pos));
@@ -225,6 +238,18 @@ fn paddleRect(x: f32, y: f32) c.SDL_Rect {
 
 fn brickRect(x: f32, y: f32, w: f32, h: f32) c.SDL_Rect {
     return makeRect(x, y, w, h);
+}
+
+fn leftWall() c.SDL_Rect {
+    return makeRect(0, GAME_DEFAULT_Y, WALL_SIZE, GAME_HEIGHT);
+}
+
+fn topWall() c.SDL_Rect {
+    return makeRect(0, GAME_DEFAULT_Y - WALL_SIZE, WINDOW_WIDTH, WALL_SIZE);
+}
+
+fn rightWall() c.SDL_Rect {
+    return makeRect(WINDOW_WIDTH - WALL_SIZE, GAME_DEFAULT_Y, WALL_SIZE, GAME_HEIGHT);
 }
 
 fn makeRect(x: f32, y: f32, w: f32, h: f32) c.SDL_Rect {
