@@ -38,6 +38,7 @@ pub fn build(b: *std.Build) void {
 
     // SDL
     exe.linkSystemLibrary("SDL2");
+    exe.linkSystemLibrary("SDL2_ttf");
     exe.linkLibC();
 
     // This declares intent for the executable to be installed into the
